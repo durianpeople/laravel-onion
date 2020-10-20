@@ -12,7 +12,9 @@ Configuration steps:
 
     Then, register the middlewares to `$middleware` protected variable your of `app/Http/Kernel.php`
 
-3. Modify `report()` method of **your** `app/Exceptions/Handler.php`:
+3. Copy `Module/Shared` contents to your `Modules` folder
+
+4. Modify `report()` method of **your** `app/Exceptions/Handler.php`:
     ```php
     public function report(Throwable $exception)
     {
@@ -21,7 +23,7 @@ Configuration steps:
     }
     ```
 
-3. Add following code to `boot()` method of **your** `app/Providers/AppServiceProvider.php`:
+5. Add following code to `boot()` method of **your** `app/Providers/AppServiceProvider.php`:
 
     ```php
     // Register view namespaces
@@ -32,7 +34,7 @@ Configuration steps:
 
     Each module manages views in **your** `Presentation/views` directory under *Module folder name* namespace. (e.g. `view('Welcome::index')`)
 
-4. Add these method definitions in **your** `app/Providers/EventServiceProvider.php`:
+6. Add these method definitions in **your** `app/Providers/EventServiceProvider.php`:
 
    ```php
    public function shouldDiscoverEvents()
@@ -53,14 +55,14 @@ Configuration steps:
    }
    ```
 
-5. Add following provider files:
+7. Add following provider files:
 
     - `app/Providers/DependencyInjectionServiceProvider.php`
     - `app/Providers/MessagingServiceProvider.php`
 
     and register the provider in `app.php` in `config` directory
 
-6. Additionally, add this code before the last line in `Kernel.php` in `app/Console` directory:
+8. Additionally, add this code before the last line in `Kernel.php` in `app/Console` directory:
 
     ```php
     foreach (scandir($path = app_path('Modules')) as $dir) {
