@@ -24,7 +24,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        foreach (scandir($path = app_path('Modules')) as $dir) {
+            if (file_exists($filepath = "{$path}/{$dir}/scheduling.php")) {
+                require $filepath;
+            }
+        }
     }
 
     /**
