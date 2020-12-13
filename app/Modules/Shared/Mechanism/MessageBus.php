@@ -10,15 +10,26 @@ class MessageBus
 {
     private static array $listeners = [];
     private static array $messages = [];
-    private static int $stack = -1;
+    private static bool $on_hold = false;
+    private static string $current_channel = 'default';
+    private static ?string $allowed_listener_channel = null;
+
+    public static function setChannel(string $channel)
+    {
+        self::$current_channel = $channel;
+    }
 
     public static function listenTo(string $channel, Closure $on_message_received)
     {
-        if (!isset(self::$listeners[$channel])) {
-            self::$listeners[$channel] = [];
-        }
+        self::$listeners[$channel][self::$current_channel][] = $on_message_received;
+    }
 
-        self::$listeners[$channel][] = $on_message_received;
+    /**
+     * Clear all registered listeners
+     */
+    public static function clearListeners()
+    {
+        self::$listeners = [];
     }
 
     /**
@@ -26,8 +37,7 @@ class MessageBus
      */
     public static function holdMessages()
     {
-        self::$stack++;
-        self::$messages[self::$stack] = [];
+        self::$on_hold = true;
     }
 
     /**
@@ -43,10 +53,10 @@ class MessageBus
     {
         $payload = new Message($source_channel, $label, $message);
 
-        if (self::$stack == -1) {
+        if (!self::$on_hold) {
             MessageBusJob::dispatch($payload);
         } else {
-            array_push(self::$messages[self::$stack], $payload);
+            array_push(self::$messages, $payload);
         }
     }
 
@@ -55,13 +65,11 @@ class MessageBus
      */
     public static function releaseMessages()
     {
-        while (self::$stack >= 0) {
-            foreach (self::$messages[self::$stack] as $message) {
-                MessageBusJob::dispatch($message);
-            }
+        self::$on_hold = false;
 
-            unset(self::$messages[self::$stack]);
-            self::$stack--;
+        while (!empty(self::$messages)) {
+            $message = array_shift(self::$messages);
+            MessageBusJob::dispatch($message);
         }
     }
 
@@ -70,8 +78,17 @@ class MessageBus
      */
     public static function resetMessages()
     {
-        unset(self::$messages[self::$stack]);
-        self::$stack--;
+        self::$messages = [];
+    }
+
+    public static function disableListenersExceptOn(string $channel)
+    {
+        self::$allowed_listener_channel = $channel;
+    }
+
+    public static function enableListeners()
+    {
+        self::$allowed_listener_channel = null;
     }
 
     /**
@@ -84,8 +101,16 @@ class MessageBus
             return;
         }
 
-        foreach (self::$listeners[$message->getSourceChannel()] as $listener) {
-            $listener($message->getLabel(), $message->getContent());
+        foreach (self::$listeners[$message->getSourceChannel()] as $channel => $listeners) {
+            if (self::$allowed_listener_channel !== null) {
+                if ($channel != self::$allowed_listener_channel) {
+                    continue;
+                }
+            }
+
+            foreach ($listeners as $listener) {
+                $listener($message->getLabel(), $message->getContent());
+            }
         }
     }
 }
