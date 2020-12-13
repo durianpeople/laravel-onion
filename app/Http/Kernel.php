@@ -2,9 +2,7 @@
 
 namespace App\Http;
 
-use App\Http\Middleware\CheckForMaintenanceMode;
 use App\Http\Middleware\EncryptCookies;
-use App\Http\Middleware\IamCheckJwtMiddleware;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\VerifyCsrfToken;
 use Fruitcake\Cors\HandleCors;
@@ -35,7 +33,6 @@ class Kernel extends HttpKernel
     protected $middleware = [
         TrustProxies::class,
         HandleCors::class,
-        CheckForMaintenanceMode::class,
         ValidatePostSize::class,
         ConvertEmptyStringsToNull::class,
         // Request line ===============================================
