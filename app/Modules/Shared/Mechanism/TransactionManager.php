@@ -6,14 +6,9 @@ namespace App\Modules\Shared\Mechanism;
 
 use Illuminate\Database\ConnectionInterface;
 
-class UnitOfWork
+class TransactionManager
 {
     private ConnectionInterface $db;
-
-    public static function newInstance(ConnectionInterface $db): UnitOfWork
-    {
-        return new UnitOfWork($db);
-    }
 
     /**
      * @param ConnectionInterface $db
@@ -23,22 +18,27 @@ class UnitOfWork
         $this->db = $db;
     }
 
+    public static function newInstance(ConnectionInterface $db): TransactionManager
+    {
+        return new TransactionManager($db);
+    }
+
     public function begin(): void
     {
-        MessageBus::holdMessages();
+        EventManager::hold();
         $this->db->beginTransaction();
     }
 
     public function commit(): void
     {
         $this->db->commit();
-        MessageBus::releaseMessages();
+        EventManager::release();
     }
 
     public function rollback(): void
     {
         $this->db->rollBack();
-        MessageBus::resetMessages();
-        MessageBus::releaseMessages();
+        EventManager::reset();
+        EventManager::release();
     }
 }

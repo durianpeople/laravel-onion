@@ -9,8 +9,6 @@ use Closure;
 class MessageBus
 {
     private static array $listeners = [];
-    private static array $messages = [];
-    private static bool $on_hold = false;
     private static string $current_channel = 'default';
     private static ?string $allowed_listener_channel = null;
 
@@ -33,14 +31,6 @@ class MessageBus
     }
 
     /**
-     * Hold broadcast messages from being processed into stack
-     */
-    public static function holdMessages()
-    {
-        self::$on_hold = true;
-    }
-
-    /**
      * Broadcast message from source channel into queue.
      *
      * Message can be held by MessageBus::holdMessages() and reinserted into queue by MessageBus::releaseMessages() or discarded by MessageBus::resetMessage()
@@ -53,32 +43,7 @@ class MessageBus
     {
         $payload = new Message($source_channel, $label, $message);
 
-        if (!self::$on_hold) {
-            MessageBusJob::dispatch($payload);
-        } else {
-            array_push(self::$messages, $payload);
-        }
-    }
-
-    /**
-     * Release held messages into queue for processing
-     */
-    public static function releaseMessages()
-    {
-        self::$on_hold = false;
-
-        while (!empty(self::$messages)) {
-            $message = array_shift(self::$messages);
-            MessageBusJob::dispatch($message);
-        }
-    }
-
-    /**
-     * Discard all messages held in stack
-     */
-    public static function resetMessages()
-    {
-        self::$messages = [];
+        MessageBusJob::dispatch($payload);
     }
 
     public static function disableListenersExceptOn(string $channel)

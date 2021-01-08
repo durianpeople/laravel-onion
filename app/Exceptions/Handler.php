@@ -2,7 +2,7 @@
 
 namespace App\Exceptions;
 
-use App\Modules\Shared\Mechanism\MessageBus;
+use App\Modules\Shared\Mechanism\EventManager;
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
@@ -40,7 +40,7 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception)
     {
-        MessageBus::resetMessages();
+        EventManager::reset();
         parent::report($exception);
     }
 
